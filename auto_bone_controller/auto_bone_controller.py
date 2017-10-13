@@ -16,6 +16,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ***** END GPL LICENCE BLOCK *****
+# change by ddjef to support armature object not named "rig"
 
 bl_info = {
     "name": "Auto Bone Controller",
@@ -84,18 +85,18 @@ class RunAction(bpy.types.Operator):
     # Create bone groups (POSE mode)
     # ------------------------------
     # noinspection PyMethodMayBeStatic
-    def create_bone_groups(self, amt):
+    def create_bone_groups(self, ob):
         bpy.ops.object.mode_set(mode='POSE')
-        if 'Grp_In' in bpy.data.objects[amt.name].pose.bone_groups:
-            grp_in = bpy.data.objects[amt.name].pose.bone_groups['Grp_In']
+        if 'Grp_In' in bpy.data.objects[ob.name].pose.bone_groups:
+            grp_in = bpy.data.objects[ob.name].pose.bone_groups['Grp_In']
         else:
-            grp_in = bpy.data.objects[amt.name].pose.bone_groups.new("Grp_In")
+            grp_in = bpy.data.objects[ob.name].pose.bone_groups.new("Grp_In")
             grp_in.color_set = 'THEME03'  # Green
 
-        if 'Grp_Out' in bpy.data.objects[amt.name].pose.bone_groups:
-            grp_out = bpy.data.objects[amt.name].pose.bone_groups['Grp_Out']
+        if 'Grp_Out' in bpy.data.objects[ob.name].pose.bone_groups:
+            grp_out = bpy.data.objects[ob.name].pose.bone_groups['Grp_Out']
         else:
-            grp_out = bpy.data.objects[amt.name].pose.bone_groups.new("Grp_Out")
+            grp_out = bpy.data.objects[ob.name].pose.bone_groups.new("Grp_Out")
             grp_out.color_set = 'THEME01'  # Red
 
         bpy.ops.object.mode_set(mode='EDIT')
@@ -106,8 +107,8 @@ class RunAction(bpy.types.Operator):
     # Set bone groups
     # ------------------------------
     # noinspection PyMethodMayBeStatic
-    def set_bone_group(self, amt, bone_name, grp):
-        bpy.data.objects[amt.name].pose.bones[bone_name].bone_group = grp
+    def set_bone_group(self, amt, bone_name, grp, ob):
+        bpy.data.objects[ob.name].pose.bones[bone_name].bone_group = grp
 
     # ------------------------------
     # Create bone controllers
@@ -230,7 +231,7 @@ class RunAction(bpy.types.Operator):
         bz = bpy.data.armatures[amt.name].edit_bones[main_name].bbone_z
         # create groups
         if scene.auto_bone_color is True:
-            grp_in, grp_out = self.create_bone_groups(amt)
+            grp_in, grp_out = self.create_bone_groups(ob)
 
         # create controllers
         self.create_controllers(amt, main_bone, txt_a, txt_b, size_a, size_b, bx, bz, roll)
@@ -259,9 +260,9 @@ class RunAction(bpy.types.Operator):
         # set bone groups
         if scene.auto_bone_color is True:
             # noinspection PyUnboundLocalVariable
-            self.set_bone_group(amt, main_name + txt_a, grp_in)
+            self.set_bone_group(amt, main_name + txt_a, grp_in, ob)
             # noinspection PyUnboundLocalVariable
-            self.set_bone_group(amt, main_name + txt_b, grp_out)
+            self.set_bone_group(amt, main_name + txt_b, grp_out, ob)
 
         # back to original mode
         bpy.ops.object.mode_set(mode=oldmode)
@@ -282,6 +283,7 @@ class RunAction(bpy.types.Operator):
         ob = context.object
         # retry armature
         amt = ob.data
+        
         # save the list of selected bones because the selection is missing when parent
         selbones = []
         if context.mode == "EDIT_ARMATURE":
